@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import 'package:chat_app/sceens/chat_screen.dart';
-import 'package:chat_app/sceens/users_screen.dart';
-import '../sceens/loading_screen.dart';
-import '../sceens/login_screen.dart';
-import '../sceens/register_screen.dart';
+import 'package:chat_app/screens/chat_screen.dart';
+import 'package:chat_app/screens/users_screen.dart';
+import '../screens/loading_screen.dart';
+import '../screens/login_screen.dart';
+import '../screens/register_screen.dart';
 
 final Map<String, Widget Function(BuildContext)> appRoutes = {
 
