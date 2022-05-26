@@ -1,9 +1,12 @@
 
 
+import 'package:chat_app/helpers/show_alert.dart';
 import 'package:chat_app/widgets/custom_button.dart';
 import 'package:chat_app/widgets/custom_input.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../services/auth_service.dart';
 import '../widgets/labels.dart';
 import '../widgets/logo.dart';
 
@@ -47,13 +50,17 @@ class _Form extends StatefulWidget {
 }
 
 class __FormState extends State<_Form> {
+
+
+
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
 
-
-    final TextEditingController nameController = TextEditingController();
-    final TextEditingController emailController = TextEditingController();
-    final TextEditingController passwordController = TextEditingController();
+    final authService = Provider.of<AuthService>(context);
 
     return Container(
       padding: const EdgeInsets.symmetric( horizontal: 25),
@@ -66,10 +73,19 @@ class __FormState extends State<_Form> {
           const SizedBox(height: 20,),
           CustomInput(textController: passwordController, textType: TextInputType.visiblePassword,hintText: 'Password',prefixIcon: Icons.lock_outline,obscureText: true,),
           const SizedBox(height: 20,),
-          CustomButton(onPressed: () {
-            print(emailController.text);
+          CustomButton(onPressed: (authService.authenticating) ? null : () async{
+
+            FocusScope.of(context).unfocus();
+
+            final resp = await authService.register(nameController.text.trim(),emailController.text.trim(), passwordController.text.trim());
+
+            (resp['ok']) 
+
+              ? Navigator.pushReplacementNamed(context, 'users') 
+              
+              : showAlert(context, 'Register error', resp['msg']);
           },
-          textButton: 'Registrarse'),
+          textButton: 'Crear cuenta'),
         ],
       )
     );
