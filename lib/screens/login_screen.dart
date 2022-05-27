@@ -7,6 +7,7 @@ import 'package:chat_app/widgets/custom_input.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../services/socket_service.dart';
 import '../widgets/labels.dart';
 import '../widgets/logo.dart';
 
@@ -61,6 +62,7 @@ class __FormState extends State<_Form> {
 
     
     final authService = Provider.of<AuthService>(context);
+    final socketService = Provider.of<SocketService>(context);
     
 
     return Container(
@@ -78,11 +80,17 @@ class __FormState extends State<_Form> {
 
             final resp = await authService.login(emailController.text.trim(), passwordController.text.trim());
 
-            (resp['ok']) 
+            if(resp['ok']) {
 
-              ? Navigator.pushReplacementNamed(context, 'users') 
-              
-              : showAlert(context, 'Login error', resp['msg']);
+             
+              socketService.connect();
+
+              Navigator.pushReplacementNamed(context, 'users'); 
+
+            }else{
+
+              showAlert(context, 'Login error', resp['msg']);
+            }
             
            
           },

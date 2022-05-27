@@ -1,7 +1,13 @@
+
 import 'dart:io';
+import 'package:chat_app/models/messages_response.dart';
+import 'package:chat_app/services/auth_service.dart';
+import 'package:chat_app/services/chat_service.dart';
+import 'package:chat_app/services/socket_service.dart';
 import 'package:chat_app/widgets/chat_message.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class ChatScreen extends StatefulWidget {
    
@@ -15,8 +21,49 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   final textController = TextEditingController();
   final focusNode = FocusNode();
+  late ChatService chatService;
+  late SocketService socketService; 
+  
+  
 
   List<ChatMessage> messages = [];
+
+  @override
+  void initState() {
+    
+    super.initState();
+
+    chatService  = Provider.of<ChatService>(context, listen: false);
+    socketService  = Provider.of<SocketService>(context, listen: false);
+
+
+    socketService.socket.on('user-message',_messageListener);
+
+    _loadMessagesHistory( chatService.chatUser.uid );
+  }
+
+
+  void _messageListener( dynamic data ) {
+
+    //print('User message '+data['msg']);
+
+    ChatMessage message = ChatMessage(
+      text: data['msg'],
+      uid: chatService.chatUser.uid,
+      animationController: AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds:300),
+        )
+    );
+
+    messages.insert(0,message);
+    message.animationController.forward();
+
+    setState(() {
+      
+    });
+    
+  }
 
 
   @override
@@ -27,12 +74,18 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         message.animationController.dispose();
     }
 
+    socketService.socket.off('user-message');
+
     super.dispose();
   }
 
 
   @override
   Widget build(BuildContext context) {
+
+    
+    final chatUser = chatService.chatUser;
+
     return  Scaffold(
       appBar: AppBar(
         centerTitle: true,
@@ -42,11 +95,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           children:  [
             CircleAvatar(
               maxRadius: 14,
-              child: const Text('Ma', style: TextStyle(fontSize: 12),),
+              child: Text(chatUser.name.substring(0,2), style: const TextStyle(fontSize: 12),),
               backgroundColor: Colors.blue[200],
             ),
             const SizedBox(height: 5,),
-            const Text('Maria', style: TextStyle(color: Colors.black87, fontSize: 12),)
+            Text(chatUser.name, style: const TextStyle(color: Colors.black87, fontSize: 12),)
           ],
         ),
       ),
@@ -129,13 +182,16 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
 
     if(text.isEmpty)  return;
+
+
+    final authService = Provider.of<AuthService>(context, listen: false);
    
     textController.clear();    
     focusNode.requestFocus();
 
     final newMesage = ChatMessage(
       text: text,
-      uid: '123',
+      uid: authService.user.uid,
       animationController: AnimationController(
         vsync: this,
         duration: const Duration(milliseconds:300),
@@ -148,6 +204,34 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       
     });
 
+    socketService.socket.emit('user-message',{
+      'from':authService.user.uid,
+      'to':chatService.chatUser.uid,
+      'msg':newMesage.text
+    });
+
     
   }
+
+  void _loadMessagesHistory(String uid) async{
+
+    List<Message> messageHistory = await chatService.getMessages(uid);
+
+    final history = messageHistory.map((m) => ChatMessage(
+      text: m.msg,
+      uid: m.from,
+      animationController: AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds:0),
+          )..forward()),
+      );
+
+
+    setState(() {
+      messages.insertAll(0, history);
+     });
+
+  }
+
+  
 }

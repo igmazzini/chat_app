@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../services/auth_service.dart';
+import '../services/socket_service.dart';
 import '../widgets/labels.dart';
 import '../widgets/logo.dart';
 
@@ -61,6 +62,7 @@ class __FormState extends State<_Form> {
   Widget build(BuildContext context) {
 
     final authService = Provider.of<AuthService>(context);
+    final socketService = Provider.of<SocketService>(context);
 
     return Container(
       padding: const EdgeInsets.symmetric( horizontal: 25),
@@ -79,11 +81,19 @@ class __FormState extends State<_Form> {
 
             final resp = await authService.register(nameController.text.trim(),emailController.text.trim(), passwordController.text.trim());
 
-            (resp['ok']) 
+            if(resp['ok']) {
 
-              ? Navigator.pushReplacementNamed(context, 'users') 
-              
-              : showAlert(context, 'Register error', resp['msg']);
+              socketService.connect();
+
+              Navigator.pushReplacementNamed(context, 'users'); 
+
+            }else{
+
+              showAlert(context, 'Register error', resp['msg']);
+
+            }
+
+           
           },
           textButton: 'Crear cuenta'),
         ],
